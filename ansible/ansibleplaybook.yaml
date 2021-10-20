@@ -1,0 +1,53 @@
+---
+- hosts: 127.0.0.1
+  roles:
+    - role: ansible.kubernetes-modules
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  tasks:
+  - name: Try to login to Okd cluster
+    k8s_auth:
+      host: https://127.0.0.1:8443
+      username: developer
+      password: 2041925Ossama
+      validate_certs: no
+    register: k8s_auth_result
+
+  - name: deploy hello-world pod
+    k8s:
+      state: present
+      apply: yes
+      namespace: myproject
+      host: https://127.0.0.1:8443
+      api_key: "{{ k8s_auth_result.k8s_auth.api_key }}"
+      validate_certs: no
+      definition:
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: hello-openshift
+          labels:
+            name: hello-openshift
+        spec:
+          selector:
+            matchLabels:
+              app: hello-openshift
+          replicas: 1
+          template:
+            metadata:
+              labels:
+                app: hello-openshift
+            spec:
+              containers:
+              - name: hello-openshift
+                image: openshift/hello-openshift
+                ports:
+                - containerPort: 8080
+                  protocol: TCP
+                resources:
+                  requests:
+                    cpu: 300m
+                    memory: 64Mi
+                  limits:
+                    cpu: 600m
+                    memory: 128Mi
